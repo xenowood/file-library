@@ -159,7 +159,7 @@ class MainWindow(Gtk.ApplicationWindow):
         search_row.append(self.case_check)
         main.append(search_row)
 
-        self.store = Gtk.TreeStore(str, str, str, str)  # icon, markup, size, full path
+        self.store = Gtk.TreeStore(str, str, str, str, str)  # icon, markup, size, file path, tooltip
         self.view = Gtk.TreeView(model=self.store, headers_visible=False, enable_search=False)
         col = Gtk.TreeViewColumn()
         col.set_expand(True)
@@ -170,6 +170,7 @@ class MainWindow(Gtk.ApplicationWindow):
         col.pack_start(txt, True)
         col.add_attribute(txt, "markup", 1)
         self.view.append_column(col)
+        self.view.set_tooltip_column(4)
         size_col = Gtk.TreeViewColumn()
         size_txt = Gtk.CellRendererText(xalign=1.0, xpad=8)
         size_col.pack_start(size_txt, False)
@@ -314,9 +315,18 @@ class MainWindow(Gtk.ApplicationWindow):
         col.append(chips)
         box.append(col)
 
+        rescan = Gtk.Button()
+        rescan.add_css_class("flat")
+        rescan.set_valign(Gtk.Align.START)
         if folder.busy:
-            spinner = Gtk.Spinner(spinning=True, valign=Gtk.Align.START)
-            box.append(spinner)
+            rescan.set_child(Gtk.Spinner(spinning=True))
+            rescan.set_tooltip_text("Scanning\u2026")
+            rescan.set_sensitive(False)
+        else:
+            rescan.set_icon_name("view-refresh-symbolic")
+            rescan.set_tooltip_text("Rescan this folder")
+            rescan.connect("clicked", lambda *_: self.rescan_folder(folder))
+        box.append(rescan)
         remove = Gtk.Button.new_from_icon_name("user-trash-symbolic")
         remove.add_css_class("flat")
         remove.set_valign(Gtk.Align.START)
@@ -367,6 +377,13 @@ class MainWindow(Gtk.ApplicationWindow):
         self.folders.append(folder)
         self.rebuild_folders()
         self.set_dirty("Folder added.")
+        self.start_scan([folder])
+
+    def rescan_folder(self, folder):
+        if self.scanning:
+            self.show_note("Queued. It will be scanned after the current folder.")
+        else:
+            self.show_note(f"Rescanning {folder.path}\u2026")
         self.start_scan([folder])
 
     def _remove_now(self, folder):
@@ -530,7 +547,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.store.clear()
         count, size = 0, 0
         for path, node in self.visible_roots():
-            it = self.store.append(None, ["folder", f"<b>{esc(path)}</b>", "", ""])
+            label = os.path.basename(path.rstrip("/")) or path
+            it = self.store.append(None, ["folder", f"<b>{esc(label)}</b>", "", "", esc(path)])
             self._fill(it, node, query, case, path)
             n, s = core.count_tree(node)
             count, size = count + n, size + s
@@ -539,11 +557,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _fill(self, parent, node, query, case, base):
         for name, kind, nbytes in node["files"]:
+            full = os.path.join(base, name)
             self.store.append(parent, [KIND_ICON[kind], highlight(name, query, case),
-                                       f"{core.mb(nbytes):.2f} MB", os.path.join(base, name)])
+                                       f"{core.mb(nbytes):.2f} MB", full, esc(full)])
         for sub in node["dirs"]:
-            it = self.store.append(parent, ["folder", f"<b>{esc(sub['name'])}</b>", "", ""])
-            self._fill(it, sub, query, case, os.path.join(base, sub["name"]))
+            sub_path = os.path.join(base, sub["name"])
+            it = self.store.append(parent, ["folder", f"<b>{esc(sub['name'])}</b>", "", "", esc(sub_path)])
+            self._fill(it, sub, query, case, sub_path)
 
     # ------------------------------------------------------------ scanning
     def on_scan_clicked(self):

@@ -14,20 +14,22 @@ Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
 
 - Several source folders, each with its own file types: videos, images, documents
 - Cached index; scans only when needed or when you press **Rescan all**
+- Rescan everything with **Rescan all**, or a single folder with the refresh button on its entry
 - Scan indicator with a **Stop scan** button
 - Search with a case-sensitive option
 - Right-click a file: **Copy file path** or **Open containing folder**
 - **Export .txt** saves the currently shown list
 - Trash button on each folder entry to remove it
+- The file list shows folder names only; hover a folder or file to see its full path
 - **About** dialog with version, repository link and license
 - **Save config** stores the folder setup; unsaved changes are shown in the title bar and lost on restart
 
 ## Install
 
-Download `file-library_1.0.4_all.deb` from the [Releases](../../releases) page, then:
+Download `file-library_1.0.5_all.deb` from the [Releases](../../releases) page, then:
 
 ```bash
-sudo apt install ./file-library_1.0.4_all.deb
+sudo apt install ./file-library_1.0.5_all.deb
 ```
 
 This also installs the dependencies (`python3-gi`, `gir1.2-gtk-4.0`). After that, start **File Library** from the app grid or run `file-library` in a terminal.
@@ -68,7 +70,7 @@ python3 src/file_library.py
 
 ```bash
 ./build-deb.sh
-sudo apt install ./build/file-library_1.0.4_all.deb
+sudo apt install ./build/file-library_1.0.5_all.deb
 ```
 
 Building only needs `dpkg-deb`, which Ubuntu already includes. The version is defined in `packaging/control` and `src/file_library_core.py`; the build stops if the two differ. `tools/render_icons.py` regenerates the PNG icons and needs Pillow (`python3-pil`).

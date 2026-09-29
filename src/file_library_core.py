@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 APP_NAME = "File Library"
 COMMENTS = "Browse and search videos, images and documents from several folders."
 REPO_URL = "https://github.com/xenowood/file-library"
