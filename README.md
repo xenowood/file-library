@@ -1,0 +1,89 @@
+# File Library
+
+File Library is a desktop app for Ubuntu that keeps an index of the videos, images and documents spread across your folders. Add one or more source folders, choose which file types to include for each of them, and browse everything in one tree with file sizes in MB.
+
+The scan result is cached, so searching is instant and the app only rescans when you ask it to or when a folder's file types change. Search works case sensitive or case insensitive. Right-click any file to copy its full path or open the folder that contains it in your file manager, and export the current list as a plain text file.
+
+Your folder setup is only kept when you press **Save config**, so you can try things out freely: unsaved changes are dropped when the app restarts.
+
+Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
+
+<!-- Add a screenshot here, for example: ![File Library](docs/screenshot.png) -->
+
+## Features
+
+- Several source folders, each with its own file types: videos, images, documents
+- Cached index; scans only when needed or when you press **Rescan all**
+- Scan indicator with a **Stop scan** button
+- Search with a case-sensitive option
+- Right-click a file: **Copy file path** or **Open containing folder**
+- **Export .txt** saves the currently shown list
+- Trash button on each folder entry to remove it
+- **Save config** stores the folder setup; unsaved changes are shown in the title bar and lost on restart
+
+## Install
+
+Download `file-library_1.0.3_all.deb` from the [Releases](../../releases) page, then:
+
+```bash
+sudo apt install ./file-library_1.0.3_all.deb
+```
+
+This also installs the dependencies (`python3-gi`, `gir1.2-gtk-4.0`). After that, start **File Library** from the app grid or run `file-library` in a terminal.
+
+## Usage
+
+1. Click **Add folder** and pick a folder. New folders start with **Videos** selected.
+2. Switch the **Videos / Images / Documents** toggles on the folder entry to choose what gets indexed. The folder is rescanned automatically.
+3. Type in the search box to filter by file name. Tick **Case sensitive** if needed.
+4. Right-click a file to copy its full path or open its folder.
+5. Press **Save config** to keep your folders and file types for the next start.
+
+### File types
+
+| Type      | Extensions                                                        |
+|-----------|-------------------------------------------------------------------|
+| Videos    | mp4, m4v, mkv, avi, mov, wmv, flv, webm, mpg, mpeg, m2ts, mts, 3gp, ogv, vob |
+| Images    | jpg, jpeg, png, gif, webp, bmp, tif, tiff, heic, heif, svg        |
+| Documents | pdf, doc, docx, odt, rtf, txt, md, xls, xlsx, ods, csv, ppt, pptx, odp, epub |
+
+You can change the lists in `src/file_library_core.py`.
+
+## Files the app writes
+
+| File                                   | Purpose                                        |
+|----------------------------------------|------------------------------------------------|
+| `~/.config/file-library/config.json`   | Folder setup, written by **Save config**       |
+| `~/.cache/file-library/cache.json`     | Scanned file index                             |
+
+## Run from source
+
+```bash
+sudo apt install python3 python3-gi gir1.2-gtk-4.0
+python3 src/file_library.py
+```
+
+## Build the .deb
+
+```bash
+./build-deb.sh
+sudo apt install ./build/file-library_1.0.3_all.deb
+```
+
+Building only needs `dpkg-deb`, which Ubuntu already includes. `tools/render_icons.py` regenerates the PNG icons and needs Pillow (`python3-pil`).
+
+## Project layout
+
+```
+src/file_library.py        GTK 4 interface
+src/file_library_core.py   scanning, config, cache, export (no GUI code)
+bin/file-library           launcher script installed to /usr/bin
+data/                      .desktop entry and icons (SVG and PNG sizes)
+packaging/                 Debian control file and install hooks
+tools/render_icons.py      renders the PNG icons
+build-deb.sh               assembles the .deb
+```
+
+## License
+
+Released under the [MIT License](LICENSE).
