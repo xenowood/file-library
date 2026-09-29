@@ -110,11 +110,14 @@ class MainWindow(Gtk.ApplicationWindow):
         self.btn_scan = self._make_button("view-refresh-symbolic", "Rescan all", self.on_scan_clicked)
         self.btn_save = self._make_button("document-save-symbolic", "Save config", self.on_save)
         self.btn_export = self._make_button("document-send-symbolic", "Export .txt", self.on_export)
+        self.btn_about = self._make_button("help-about-symbolic", "About", self.on_about)
         for w in (self.btn_add, self.btn_scan):
             toolbar.append(w)
         toolbar.append(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL))
         toolbar.append(self.btn_save)
         toolbar.append(self.btn_export)
+        toolbar.append(Gtk.Box(hexpand=True))
+        toolbar.append(self.btn_about)
         root.append(toolbar)
         root.append(Gtk.Separator())
 
@@ -494,6 +497,20 @@ class MainWindow(Gtk.ApplicationWindow):
             self.show_note(f"Couldn't write the file: {err}")
             return
         self.show_note(f"Exported the shown list to {path}")
+
+    def on_about(self):
+        dialog = Gtk.AboutDialog(transient_for=self, modal=True)
+        dialog.set_program_name(core.APP_NAME)
+        dialog.set_version(core.__version__)
+        dialog.set_comments(core.COMMENTS)
+        dialog.set_logo_icon_name("file-library")
+        dialog.set_website(core.REPO_URL)
+        dialog.set_website_label(core.REPO_URL.replace("https://", ""))
+        dialog.set_copyright(core.COPYRIGHT)
+        dialog.set_license_type(Gtk.License.CUSTOM)
+        dialog.set_license(core.LICENSE_TEXT)
+        dialog.set_wrap_license(True)
+        dialog.present()
 
     # ------------------------------------------------------------ list view
     def visible_roots(self):

@@ -19,14 +19,15 @@ Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
 - Right-click a file: **Copy file path** or **Open containing folder**
 - **Export .txt** saves the currently shown list
 - Trash button on each folder entry to remove it
+- **About** dialog with version, repository link and license
 - **Save config** stores the folder setup; unsaved changes are shown in the title bar and lost on restart
 
 ## Install
 
-Download `file-library_1.0.3_all.deb` from the [Releases](../../releases) page, then:
+Download `file-library_1.0.4_all.deb` from the [Releases](../../releases) page, then:
 
 ```bash
-sudo apt install ./file-library_1.0.3_all.deb
+sudo apt install ./file-library_1.0.4_all.deb
 ```
 
 This also installs the dependencies (`python3-gi`, `gir1.2-gtk-4.0`). After that, start **File Library** from the app grid or run `file-library` in a terminal.
@@ -67,19 +68,19 @@ python3 src/file_library.py
 
 ```bash
 ./build-deb.sh
-sudo apt install ./build/file-library_1.0.3_all.deb
+sudo apt install ./build/file-library_1.0.4_all.deb
 ```
 
-Building only needs `dpkg-deb`, which Ubuntu already includes. `tools/render_icons.py` regenerates the PNG icons and needs Pillow (`python3-pil`).
+Building only needs `dpkg-deb`, which Ubuntu already includes. The version is defined in `packaging/control` and `src/file_library_core.py`; the build stops if the two differ. `tools/render_icons.py` regenerates the PNG icons and needs Pillow (`python3-pil`).
 
 ## Project layout
 
 ```
 src/file_library.py        GTK 4 interface
-src/file_library_core.py   scanning, config, cache, export (no GUI code)
+src/file_library_core.py   scanning, config, cache, export, version (no GUI code)
 bin/file-library           launcher script installed to /usr/bin
 data/                      .desktop entry and icons (SVG and PNG sizes)
-packaging/                 Debian control file and install hooks
+packaging/                 Debian control file, copyright and install hooks
 tools/render_icons.py      renders the PNG icons
 build-deb.sh               assembles the .deb
 ```

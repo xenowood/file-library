@@ -3,16 +3,22 @@
 set -e
 cd "$(dirname "$0")"
 VERSION=$(grep '^Version:' packaging/control | cut -d' ' -f2)
+CODE_VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/file_library_core.py)
+if [ "$VERSION" != "$CODE_VERSION" ]; then
+    echo "Version mismatch: packaging/control says $VERSION, src/file_library_core.py says $CODE_VERSION" >&2
+    exit 1
+fi
 PKG="build/file-library_${VERSION}_all"
 
 rm -rf build
 mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin" "$PKG/usr/lib/file-library" \
-         "$PKG/usr/share/applications" "$PKG/usr/share/icons"
+         "$PKG/usr/share/applications" "$PKG/usr/share/icons" "$PKG/usr/share/doc/file-library"
 
 install -m 755 bin/file-library "$PKG/usr/bin/file-library"
 install -m 644 src/file_library.py src/file_library_core.py "$PKG/usr/lib/file-library/"
 install -m 644 data/org.filelibrary.FileLibrary.desktop "$PKG/usr/share/applications/"
 cp -r data/icons/hicolor "$PKG/usr/share/icons/"
+install -m 644 packaging/copyright "$PKG/usr/share/doc/file-library/copyright"
 
 install -m 755 packaging/postinst packaging/postrm "$PKG/DEBIAN/"
 cp packaging/control "$PKG/DEBIAN/control"
