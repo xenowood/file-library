@@ -8,7 +8,7 @@ Your folder setup is only kept when you press **Save config**, so you can try th
 
 Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
 
-<img width="1472" height="1177" alt="GUI" src="https://github.com/user-attachments/assets/c93af8c0-5efe-4987-96b7-82f9eb0a2af2" />
+<img width="591" height="413" alt="Screenshot_2026-09-29_20h50m55s" src="https://github.com/user-attachments/assets/f6660b81-32c8-4cf1-b76c-7a8e19e6a14b" />
 
 ## Features
 
