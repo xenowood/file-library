@@ -8,7 +8,10 @@ Your folder setup is only kept when you press **Save config**, so you can try th
 
 Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
 
-<!-- Add a screenshot here, for example: ![File Library](docs/screenshot.png) -->
+<p align="center">
+  <img src="docs/screenshot.png" alt="File Library main window searching for 'the time has come' with Ignore delimiter enabled" width="900">
+</p>
+<p align="center"><em>Illustration of the main window: a search with "Ignore delimiter" and the right-click menu.</em></p>
 
 ## Features
 
@@ -86,6 +89,8 @@ bin/file-library           launcher script installed to /usr/bin
 data/                      .desktop entry and icons (SVG and PNG sizes)
 packaging/                 Debian control file, copyright and install hooks
 tools/render_icons.py      renders the PNG icons
+tools/render_screenshot.py renders docs/screenshot.png (an illustration, not a capture)
+docs/screenshot.png        image shown at the top of this README
 build-deb.sh               assembles the .deb
 ```
 
