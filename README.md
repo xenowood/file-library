@@ -16,7 +16,8 @@ Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
 - Cached index; scans only when needed or when you press **Rescan all**
 - Rescan everything with **Rescan all**, or a single folder with the refresh button on its entry
 - Scan indicator with a **Stop scan** button
-- Search with a case-sensitive option
+- Search on the file name only (the extension is ignored), with a case-sensitive option and an **Ignore delimiter** option: searching for `the time has come` also finds `the.time.has.come`, `the,time,has,come`, `the-time-has-come` and `the_time_has_come`
+- The window size, maximized state and the position of the divider are restored on the next start
 - Right-click a file: **Copy file path** or **Open containing folder**
 - **Export .txt** saves the currently shown list
 - Trash button on each folder entry to remove it
@@ -26,10 +27,10 @@ Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
 
 ## Install
 
-Download `file-library_1.0.5_all.deb` from the [Releases](../../releases) page, then:
+Download `file-library_1.0.6_all.deb` from the [Releases](../../releases) page, then:
 
 ```bash
-sudo apt install ./file-library_1.0.5_all.deb
+sudo apt install ./file-library_1.0.6_all.deb
 ```
 
 This also installs the dependencies (`python3-gi`, `gir1.2-gtk-4.0`). After that, start **File Library** from the app grid or run `file-library` in a terminal.
@@ -57,6 +58,7 @@ You can change the lists in `src/file_library_core.py`.
 | File                                   | Purpose                                        |
 |----------------------------------------|------------------------------------------------|
 | `~/.config/file-library/config.json`   | Folder setup, written by **Save config**       |
+| `~/.config/file-library/window.json`   | Window size and divider position, written when the window closes |
 | `~/.cache/file-library/cache.json`     | Scanned file index                             |
 
 ## Run from source
@@ -70,7 +72,7 @@ python3 src/file_library.py
 
 ```bash
 ./build-deb.sh
-sudo apt install ./build/file-library_1.0.5_all.deb
+sudo apt install ./build/file-library_1.0.6_all.deb
 ```
 
 Building only needs `dpkg-deb`, which Ubuntu already includes. The version is defined in `packaging/control` and `src/file_library_core.py`; the build stops if the two differ. `tools/render_icons.py` regenerates the PNG icons and needs Pillow (`python3-pil`).

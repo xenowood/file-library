@@ -41,15 +41,11 @@ def esc(text):
     return GLib.markup_escape_text(text)
 
 
-def highlight(name, query, case_sensitive):
-    if not query:
+def highlight(name, query, case_sensitive, ignore_delimiters=False):
+    span = core.find_in_filename(name, query, case_sensitive, ignore_delimiters) if query else None
+    if not span or span[0] == span[1]:
         return esc(name)
-    hay = name if case_sensitive else name.lower()
-    needle = query if case_sensitive else query.lower()
-    i = hay.find(needle)
-    if i < 0:
-        return esc(name)
-    j = i + len(needle)
+    i, j = span
     return (esc(name[:i]) + '<span background="#f5d76e" foreground="#000000">'
             + esc(name[i:j]) + "</span>" + esc(name[j:]))
 
@@ -62,7 +58,11 @@ def fmt_size_total(size):
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title=TITLE)
-        self.set_default_size(1000, 680)
+        self.window_state = core.load_window_state()
+        self.set_default_size(self.window_state.get("width", 1000),
+                              self.window_state.get("height", 680))
+        if self.window_state.get("maximized"):
+            self.maximize()
 
         self.folders = []
         self.dirty = False
@@ -82,6 +82,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self._build_ui()
         self._load_state()
+        self.connect("close-request", self.on_close_request)
 
     # ------------------------------------------------------------ UI
     def _make_button(self, icon, text, callback):
@@ -128,7 +129,8 @@ class MainWindow(Gtk.ApplicationWindow):
         root.append(Gtk.Separator())
 
         paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, vexpand=True)
-        paned.set_position(310)
+        paned.set_position(self.window_state.get("paned", 310))
+        self.paned = paned
         paned.set_shrink_start_child(False)
         root.append(paned)
 
@@ -151,12 +153,17 @@ class MainWindow(Gtk.ApplicationWindow):
         main.set_margin_end(12)
         main.set_margin_bottom(8)
         search_row = Gtk.Box(spacing=10)
-        self.search = Gtk.SearchEntry(hexpand=True, placeholder_text="Search file names, for example garden")
+        self.search = Gtk.SearchEntry(hexpand=True, placeholder_text="Search file names, for example garden (extension is ignored)")
         self.search.connect("search-changed", lambda *_: self.refresh_tree())
         self.case_check = Gtk.CheckButton(label="Case sensitive")
         self.case_check.connect("toggled", lambda *_: self.refresh_tree())
         search_row.append(self.search)
+        self.delim_check = Gtk.CheckButton(label="Ignore delimiter")
+        self.delim_check.set_tooltip_text(
+            "Ignore spaces, dots, commas, dashes and underscores when searching")
+        self.delim_check.connect("toggled", lambda *_: self.refresh_tree())
         search_row.append(self.case_check)
+        search_row.append(self.delim_check)
         main.append(search_row)
 
         self.store = Gtk.TreeStore(str, str, str, str, str)  # icon, markup, size, file path, tooltip
@@ -201,6 +208,18 @@ class MainWindow(Gtk.ApplicationWindow):
         for w in (self.count_label, self.dirty_label, self.status_label, self.progress):
             status.append(w)
         root.append(status)
+
+    def on_close_request(self, _window):
+        state = dict(self.window_state)
+        state["maximized"] = self.is_maximized()
+        if not state["maximized"] and self.get_width() > 0 and self.get_height() > 0:
+            state["width"], state["height"] = self.get_width(), self.get_height()
+        state["paned"] = self.paned.get_position()
+        try:
+            core.save_window_state(state)
+        except OSError:
+            pass
+        return False  # let the window close
 
     # ------------------------------------------------------------ state
     def _load_state(self):
@@ -536,7 +555,7 @@ class MainWindow(Gtk.ApplicationWindow):
         roots = []
         for f in self.folders:
             if f.enabled and f.tree is not None:
-                node = core.filter_tree(f.tree, f.types, query, case)
+                node = core.filter_tree(f.tree, f.types, query, case, self.delim_check.get_active())
                 if node is not None:
                     roots.append((f.path, node))
         return roots
@@ -558,7 +577,7 @@ class MainWindow(Gtk.ApplicationWindow):
     def _fill(self, parent, node, query, case, base):
         for name, kind, nbytes in node["files"]:
             full = os.path.join(base, name)
-            self.store.append(parent, [KIND_ICON[kind], highlight(name, query, case),
+            self.store.append(parent, [KIND_ICON[kind], highlight(name, query, case, self.delim_check.get_active()),
                                        f"{core.mb(nbytes):.2f} MB", full, esc(full)])
         for sub in node["dirs"]:
             sub_path = os.path.join(base, sub["name"])

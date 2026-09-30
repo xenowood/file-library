@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 APP_NAME = "File Library"
 COMMENTS = "Browse and search videos, images and documents from several folders."
 REPO_URL = "https://github.com/xenowood/file-library"
@@ -61,6 +61,11 @@ def cache_path():
     return os.path.join(base, "file-library", "cache.json")
 
 
+def window_state_path():
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    return os.path.join(base, "file-library", "window.json")
+
+
 def _write_json(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
@@ -99,6 +104,23 @@ def save_config(folders, path=None):
     data = {"version": 1, "folders": [
         {"path": f["path"], "enabled": f["enabled"], "types": sorted(f["types"])} for f in folders]}
     _write_json(path or config_path(), data)
+
+
+# ---------------------------------------------------------------- window state
+def load_window_state(path=None):
+    """Window size, maximized flag and splitter position from the last session."""
+    data = _read_json(path or window_state_path(), {})
+    limits = {"width": (500, 10000), "height": (350, 10000), "paned": (120, 5000)}
+    state = {"maximized": bool(data.get("maximized", False))}
+    for key, (low, high) in limits.items():
+        value = data.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            state[key] = max(low, min(high, value))
+    return state
+
+
+def save_window_state(state, path=None):
+    _write_json(path or window_state_path(), state)
 
 
 # ---------------------------------------------------------------- cache
@@ -159,16 +181,58 @@ def scan_folder(root, types, progress=None, cancel=None):
 
 
 # ---------------------------------------------------------------- filtering
-def _match(name, query, case_sensitive):
-    if not query:
-        return True
-    return query in name if case_sensitive else query.lower() in name.lower()
+DELIMITERS = " ._-,"
 
 
-def filter_tree(node, types, query="", case_sensitive=False):
+def _fold(text, case_sensitive, ignore_delimiters):
+    """Return (folded text, index of each folded char in the original text)."""
+    chars, index = [], []
+    for i, ch in enumerate(text):
+        if ignore_delimiters and ch in DELIMITERS:
+            continue
+        for c in (ch if case_sensitive else ch.lower()):
+            chars.append(c)
+            index.append(i)
+    return "".join(chars), index
+
+
+def find_match(name, query, case_sensitive=False, ignore_delimiters=False):
+    """Return (start, end) of the first match of query in name, or None.
+
+    With ignore_delimiters, spaces, dots, commas, dashes and underscores are
+    ignored on both sides, so "the time has come" also matches "the.time-has_come".
+    An empty query matches everything and returns (0, 0).
+    """
+    wanted, _ = _fold(query, case_sensitive, ignore_delimiters)
+    if not wanted:
+        return (0, 0)
+    haystack, index = _fold(name, case_sensitive, ignore_delimiters)
+    pos = haystack.find(wanted)
+    if pos < 0:
+        return None
+    return index[pos], index[pos + len(wanted) - 1] + 1
+
+
+def find_in_filename(filename, query, case_sensitive=False, ignore_delimiters=False):
+    """Like find_match, but only looks at the file name without its extension.
+
+    The returned span is valid for the full file name too, because the name
+    without extension is a prefix of it.
+    """
+    stem = os.path.splitext(filename)[0]
+    return find_match(stem, query, case_sensitive, ignore_delimiters)
+
+
+def _match(filename, query, case_sensitive, ignore_delimiters=False):
+    return find_in_filename(filename, query, case_sensitive, ignore_delimiters) is not None
+
+
+def filter_tree(node, types, query="", case_sensitive=False, ignore_delimiters=False):
     """Return a filtered copy of node, or None if nothing matches."""
-    files = [f for f in node["files"] if f[1] in types and _match(f[0], query, case_sensitive)]
-    dirs = [d for d in (filter_tree(c, types, query, case_sensitive) for c in node["dirs"]) if d]
+    files = [f for f in node["files"]
+             if f[1] in types and _match(f[0], query, case_sensitive, ignore_delimiters)]
+    dirs = [d for d in (filter_tree(c, types, query, case_sensitive, ignore_delimiters)
+                        for c in node["dirs"]) if d]
     if not files and not dirs:
         return None
     return {"name": node["name"], "files": files, "dirs": dirs}
