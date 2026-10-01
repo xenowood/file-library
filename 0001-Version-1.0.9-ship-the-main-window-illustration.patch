@@ -1,0 +1,98 @@
+From ebce2de6b1e3aa140c52dd4857565f393f004ea1 Mon Sep 17 00:00:00 2001
+From: xenowood <100295813+xenowood@users.noreply.github.com>
+Date: Thu, 1 Oct 2026 07:57:28 +0000
+Subject: [PATCH] Version 1.0.9: ship the main window illustration with the
+ package
+
+docs/screenshot.png is installed to /usr/share/doc/file-library/. The README and release notes use version 1.0.9.
+---
+ README.md                | 6 +++---
+ RELEASE_NOTES.md         | 3 ++-
+ build-deb.sh             | 1 +
+ packaging/control        | 2 +-
+ src/file_library_core.py | 2 +-
+ 5 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/README.md b/README.md
+index 5bfd5aa..338e037 100644
+--- a/README.md
++++ b/README.md
+@@ -32,10 +32,10 @@ Built with Python and GTK 4. Packaged as a `.deb` for Ubuntu 26.04.
+ 
+ ## Install
+ 
+-Download `file-library_1.0.8_all.deb` from the [Releases](../../releases) page, then:
++Download `file-library_1.0.9_all.deb` from the [Releases](../../releases) page, then:
+ 
+ ```bash
+-sudo apt install ./file-library_1.0.8_all.deb
++sudo apt install ./file-library_1.0.9_all.deb
+ ```
+ 
+ This also installs the dependencies (`python3-gi`, `gir1.2-gtk-4.0`). After that, start **File Library** from the app grid or run `file-library` in a terminal.
+@@ -78,7 +78,7 @@ python3 src/file_library.py
+ 
+ ```bash
+ ./build-deb.sh
+-sudo apt install ./build/file-library_1.0.8_all.deb
++sudo apt install ./build/file-library_1.0.9_all.deb
+ ```
+ 
+ Building only needs `dpkg-deb`, which Ubuntu already includes. The version is defined in `packaging/control` and `src/file_library_core.py`; the build stops if the two differ. `tools/render_icons.py` regenerates the PNG icons and needs Pillow (`python3-pil`).
+diff --git a/RELEASE_NOTES.md b/RELEASE_NOTES.md
+index 07e2481..fc7e6c8 100644
+--- a/RELEASE_NOTES.md
++++ b/RELEASE_NOTES.md
+@@ -1,4 +1,4 @@
+-## File Library 1.0.8
++## File Library 1.0.9
+ 
+ - **Music** is now a fourth file type for source folders, next to videos, images and documents.
+ - New **Show** buttons at the bottom right of the file list show or hide videos, images, documents and music. Selected types are green, in the list and in the folder entries.
+@@ -7,6 +7,7 @@
+ - **Export .txt** is now called **Export list**.
+ - New icon with a music card: a fan of four cards (video, music, image, document) on a light grey background.
+ - New right-click entry **Select file in manager**, which opens the file manager with the file selected. **Open containing folder** now just opens the folder.
++- The README shows an illustration of the main window. The image is also installed with the package in `/usr/share/doc/file-library/screenshot.png`.
+ - New eye button on each folder entry, left of the rescan button, hides its files from the list. Its icon turns orange while a hidden folder is being scanned. It replaces the old checkbox.
+ 
+ ### Shortcuts
+diff --git a/build-deb.sh b/build-deb.sh
+index 4eef31b..42358a6 100755
+--- a/build-deb.sh
++++ b/build-deb.sh
+@@ -19,6 +19,7 @@ install -m 644 src/file_library.py src/file_library_core.py "$PKG/usr/lib/file-l
+ install -m 644 data/org.filelibrary.FileLibrary.desktop "$PKG/usr/share/applications/"
+ cp -r data/icons/hicolor "$PKG/usr/share/icons/"
+ install -m 644 packaging/copyright "$PKG/usr/share/doc/file-library/copyright"
++install -m 644 docs/screenshot.png "$PKG/usr/share/doc/file-library/screenshot.png"
+ 
+ install -m 755 packaging/postinst packaging/postrm "$PKG/DEBIAN/"
+ cp packaging/control "$PKG/DEBIAN/control"
+diff --git a/packaging/control b/packaging/control
+index 769a230..3e91997 100644
+--- a/packaging/control
++++ b/packaging/control
+@@ -1,5 +1,5 @@
+ Package: file-library
+-Version: 1.0.8
++Version: 1.0.9
+ Section: utils
+ Priority: optional
+ Architecture: all
+diff --git a/src/file_library_core.py b/src/file_library_core.py
+index 4b55270..024512b 100644
+--- a/src/file_library_core.py
++++ b/src/file_library_core.py
+@@ -6,7 +6,7 @@ import json
+ import os
+ import tempfile
+ 
+-__version__ = "1.0.8"
++__version__ = "1.0.9"
+ APP_NAME = "File Library"
+ COMMENTS = "Browse and search videos, images, documents and music from several folders."
+ REPO_URL = "https://github.com/xenowood/file-library"
+-- 
+2.43.0
+
