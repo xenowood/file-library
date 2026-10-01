@@ -1,5 +1,6 @@
-## File Library 1.0.9
+## File Library 1.0.10
 
+- **Documents** now also include comic book archives (`.cbz` and `.cbr`).
 - **Music** is now a fourth file type for source folders, next to videos, images and documents.
 - New **Show** buttons at the bottom right of the file list show or hide videos, images, documents and music. Selected types are green, in the list and in the folder entries.
 - **Case sensitive**, **Ignore delimiter** and the Show filter are stored with **Save config**.

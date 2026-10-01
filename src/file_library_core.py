@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-__version__ = "1.0.9"
+__version__ = "1.0.10"
 APP_NAME = "File Library"
 COMMENTS = "Browse and search videos, images, documents and music from several folders."
 REPO_URL = "https://github.com/xenowood/file-library"
@@ -40,7 +40,7 @@ TYPES = {
     "i": ("Images", "📷", {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff",
                             ".heic", ".heif", ".svg"}),
     "d": ("Documents", "📄", {".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt", ".md", ".xls",
-                               ".xlsx", ".ods", ".csv", ".ppt", ".pptx", ".odp", ".epub"}),
+                               ".xlsx", ".ods", ".csv", ".ppt", ".pptx", ".odp", ".epub", ".cbz", ".cbr"}),
     "m": ("Music", "🎵", {".mp3", ".flac", ".ogg", ".oga", ".opus", ".wav", ".m4a", ".aac",
                            ".wma", ".aiff", ".aif", ".ape"}),
 }

@@ -26,10 +26,10 @@ The scan result is cached, so searching is instant and the app only rescans when
 
 ## Install
 
-Download `file-library_1.0.9_all.deb` from the [Releases](../../releases) page, then:
+Download `file-library_1.0.10_all.deb` from the [Releases](../../releases) page, then:
 
 ```bash
-sudo apt install ./file-library_1.0.9_all.deb
+sudo apt install ./file-library_1.0.10_all.deb
 ```
 
 Start **File Library** from the app grid, or run `file-library` in a terminal.
@@ -95,7 +95,7 @@ F1, F2 and F3 work on the file that is selected in the list.
 |-----------|-------------------------------------------------------------------------------|
 | Videos    | mp4, m4v, mkv, avi, mov, wmv, flv, webm, mpg, mpeg, m2ts, mts, 3gp, ogv, vob  |
 | Images    | jpg, jpeg, png, gif, webp, bmp, tif, tiff, heic, heif, svg                    |
-| Documents | pdf, doc, docx, odt, rtf, txt, md, xls, xlsx, ods, csv, ppt, pptx, odp, epub  |
+| Documents | pdf, doc, docx, odt, rtf, txt, md, xls, xlsx, ods, csv, ppt, pptx, odp, epub, cbz, cbr |
 | Music     | mp3, flac, ogg, oga, opus, wav, m4a, aac, wma, aiff, aif, ape                 |
 
 You can change the lists in `src/file_library_core.py`.
@@ -121,7 +121,7 @@ python3 src/file_library.py
 
 ```bash
 ./build-deb.sh
-sudo apt install ./build/file-library_1.0.9_all.deb
+sudo apt install ./build/file-library_1.0.10_all.deb
 ```
 
 Building only needs `dpkg-deb`, which Ubuntu already includes. The version is defined in `packaging/control` and `src/file_library_core.py`, and the build stops if the two differ.
