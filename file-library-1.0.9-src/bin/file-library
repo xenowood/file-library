@@ -1,2 +1,0 @@
-#!/bin/sh
-exec python3 /usr/lib/file-library/file_library.py "$@"
