@@ -58,8 +58,9 @@ def esc(text):
     return GLib.markup_escape_text(text)
 
 
-def highlight(name, query, case_sensitive, ignore_delimiters=False):
-    span = core.find_in_filename(name, query, case_sensitive, ignore_delimiters) if query else None
+def highlight(name, query, case_sensitive, ignore_delimiters=False, ignore_special=False):
+    span = (core.find_in_filename(name, query, case_sensitive, ignore_delimiters, ignore_special)
+            if query else None)
     if not span or span[0] == span[1]:
         return esc(name)
     i, j = span
@@ -218,7 +219,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.btn_export = self._make_button("document-send-symbolic", "Export list", self.on_export)
         self.btn_about = self._make_button("help-about-symbolic", "About", self.on_about)
         self.btn_scan.set_tooltip_text("Rescan all folders (F5)")
-        self.btn_save.set_tooltip_text("Save the folders, search options and type filter (F7)")
+        self.btn_save.set_tooltip_text("Save the folders, their file types and which of them are hidden (F7)")
         self.btn_export.set_tooltip_text("Export the shown list as a text file (F6)")
         for w in (self.btn_add, self.btn_scan):
             toolbar.append(w)
@@ -267,11 +268,14 @@ class MainWindow(Gtk.ApplicationWindow):
         self.case_check.connect("toggled", self.on_search_option_toggled)
         search_row.append(self.search)
         self.delim_check = Gtk.CheckButton(label="Ignore delimiter")
-        self.delim_check.set_tooltip_text(
-            "Ignore spaces, dots, commas, dashes and underscores when searching")
+        self.delim_check.set_tooltip_text("Ignored when searching:  " + core.show_chars(core.DELIMITERS))
         self.delim_check.connect("toggled", self.on_search_option_toggled)
+        self.special_check = Gtk.CheckButton(label="Ignore special chars")
+        self.special_check.set_tooltip_text("Ignored when searching:  " + core.show_chars(core.SPECIAL_CHARS))
+        self.special_check.connect("toggled", self.on_search_option_toggled)
         search_row.append(self.case_check)
         search_row.append(self.delim_check)
+        search_row.append(self.special_check)
         main.append(search_row)
 
         self.store = Gtk.TreeStore(str, str, str, str, str, str)  # icon, markup, size, file path, tooltip, folder key
@@ -347,13 +351,17 @@ class MainWindow(Gtk.ApplicationWindow):
     def _load_state(self):
         cache = core.load_cache()
         cfg = core.load_config()
+        view = core.load_view_settings()
         self._applying = True
-        self.case_check.set_active(cfg["case_sensitive"])
-        self.delim_check.set_active(cfg["ignore_delimiter"])
-        self.view_types = set(cfg["view_types"])
+        self.case_check.set_active(view["case_sensitive"])
+        self.delim_check.set_active(view["ignore_delimiter"])
+        self.special_check.set_active(view["ignore_special"])
+        self.view_types = set(view["view_types"])
         for key, chip in self.filter_chips.items():
             chip.set_active(key in self.view_types)
         self._applying = False
+        if not os.path.exists(core.view_settings_path()):
+            self._save_view_settings()  # take over what older versions kept in config.json
         for item in cfg["folders"]:
             f = Folder(item["path"], item["enabled"], item["types"])
             entry = cache.get(f.path)
@@ -555,10 +563,22 @@ class MainWindow(Gtk.ApplicationWindow):
         self._save_cache()
         self.rebuild_soon()
 
+    def _save_view_settings(self):
+        """Search options and the Show filter are stored at once. They are not part
+        of Save config and never count as unsaved changes."""
+        try:
+            core.save_view_settings({
+                "case_sensitive": self.case_check.get_active(),
+                "ignore_delimiter": self.delim_check.get_active(),
+                "ignore_special": self.special_check.get_active(),
+                "view_types": self.view_types})
+        except OSError as err:
+            self.show_note(f"Couldn't store the display settings: {err}")
+
     def on_search_option_toggled(self, _check):
         self.refresh_tree()
         if not self._applying:
-            self.set_dirty("Search option changed.")
+            self._save_view_settings()
 
     def on_view_chip_toggled(self, chip, key):
         if self._applying:
@@ -575,7 +595,7 @@ class MainWindow(Gtk.ApplicationWindow):
                 return
             self.view_types.discard(key)
         self.refresh_tree()
-        self.set_dirty("Display filter changed.")
+        self._save_view_settings()
 
     # ------------------------------------------------------------ actions
     def _build_actions(self):
@@ -788,10 +808,7 @@ class MainWindow(Gtk.ApplicationWindow):
             return
         try:
             core.save_config(
-                [{"path": f.path, "enabled": f.enabled, "types": f.types} for f in self.folders],
-                {"case_sensitive": self.case_check.get_active(),
-                 "ignore_delimiter": self.delim_check.get_active(),
-                 "view_types": self.view_types})
+                [{"path": f.path, "enabled": f.enabled, "types": f.types} for f in self.folders])
         except OSError as err:
             self.show_note(f"Couldn't save the config: {err}")
             return
@@ -835,7 +852,8 @@ class MainWindow(Gtk.ApplicationWindow):
         for f in self.folders:
             types = f.types & self.view_types
             if f.enabled and f.tree is not None and types:
-                node = core.filter_tree(f.tree, types, query, case, self.delim_check.get_active())
+                node = core.filter_tree(f.tree, types, query, case, self.delim_check.get_active(),
+                                        self.special_check.get_active())
                 if node is not None:
                     roots.append((f.path, node))
         return roots
@@ -886,7 +904,8 @@ class MainWindow(Gtk.ApplicationWindow):
             return
         query = self.search.get_text()
         case = self.case_check.get_active()
-        node = core.filter_tree(folder.tree, types, query, case, self.delim_check.get_active())
+        node = core.filter_tree(folder.tree, types, query, case, self.delim_check.get_active(),
+                                self.special_check.get_active())
         if node is None:
             return
         position = sum(1 for f in self.folders[:self.folders.index(folder)] if f.path in keys)
@@ -901,7 +920,9 @@ class MainWindow(Gtk.ApplicationWindow):
     def _fill(self, parent, node, query, case, base):
         for name, kind, nbytes in node["files"]:
             full = os.path.join(base, name)
-            self.store.append(parent, [KIND_ICON[kind], highlight(name, query, case, self.delim_check.get_active()),
+            self.store.append(parent, [KIND_ICON[kind],
+                                       highlight(name, query, case, self.delim_check.get_active(),
+                                                 self.special_check.get_active()),
                                        f"{core.mb(nbytes):.2f} MB", full, esc(full), ""])
         for sub in node["dirs"]:
             sub_path = os.path.join(base, sub["name"])

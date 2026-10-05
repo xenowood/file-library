@@ -1,4 +1,9 @@
-## File Library 1.0.14
+## File Library 1.0.15
+
+- The search options (**Case sensitive**, **Ignore delimiter**, **Ignore special chars**) and the **Show** filter are now stored immediately, without **Save config** and without the green "unsaved" state. They live in the new `~/.config/file-library/view.json`; values saved by older versions in `config.json` are taken over once. **Save config** now stores the folders, their file types and hidden state.
+- New search option **Ignore special chars** ignores `! " % & ( ) [ ] { } ? # ' =`.
+- **Ignore delimiter** now also ignores the em dash (`—`).
+- Hovering **Ignore delimiter** or **Ignore special chars** shows the characters themselves instead of their names.
 
 - New right-click entry **Copy file name** (F4) copies the file name without its extension. The right-click menu is now ordered Open containing folder (F1), Select file in manager (F2), Copy file path (F3), Copy file name (F4).
 - Right-click a folder and choose **Collapse folder** to collapse it and everything below it, without collapsing its parent.
@@ -9,7 +14,6 @@
 - **Documents** now also include comic book archives (`.cbz` and `.cbr`).
 - **Music** is now a fourth file type for source folders, next to videos, images and documents.
 - New **Show** buttons at the bottom right of the file list show or hide videos, images, documents and music. Selected types are green, in the list and in the folder entries.
-- **Case sensitive**, **Ignore delimiter** and the Show filter are stored with **Save config**.
 - The **About** window has tabs for About, Shortcuts and License.
 - **Export .txt** is now called **Export list**.
 - New icon with a music card: a fan of four cards (video, music, image, document) on a light grey background.

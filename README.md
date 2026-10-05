@@ -26,10 +26,10 @@ The scan result is cached, so searching is instant and the app only rescans when
 
 ## Install
 
-Download `file-library_1.0.14_all.deb` from the [Releases](../../releases) page, then:
+Download `file-library_1.0.15_all.deb` from the [Releases](../../releases) page, then:
 
 ```bash
-sudo apt install ./file-library_1.0.14_all.deb
+sudo apt install ./file-library_1.0.15_all.deb
 ```
 
 Start **File Library** from the app grid, or run `file-library` in a terminal.
@@ -40,7 +40,7 @@ Start **File Library** from the app grid, or run `file-library` in a terminal.
 2. On the folder entry, switch on the **Videos / Images / Documents / Music** buttons you want. The first one you select starts the scan, and the folder is rescanned whenever you change them.
 3. Type in the search box to filter the list by file name.
 4. Right-click a file, or select it and use a shortcut, to copy its path or find it in your file manager.
-5. Press **Save config** (F7) to keep your folders and settings for the next start.
+5. Press **Save config** (F7) to keep your folders, their file types and hidden state for the next start. The search options and the **Show** filter are remembered automatically.
 
 ## Features
 
@@ -54,7 +54,8 @@ Start **File Library** from the app grid, or run `file-library` in a terminal.
 
 - The search looks at the file name **without its extension**.
 - **Case sensitive** switches between exact and case-insensitive matching.
-- **Ignore delimiter** treats spaces, dots, commas, dashes and underscores as equal and ignores them. A search for `the time has come` then also finds `the.time.has.come`, `the,time,has,come`, `the-time-has-come` and `the_time_has_come`.
+- **Ignore delimiter** ignores spaces, dots, commas, dashes, em dashes (`—`) and underscores. A search for `the time has come` then also finds `the.time.has.come`, `the,time,has,come`, `the-time-has-come` and `the_time_has_come`.
+- **Ignore special chars** ignores the characters ``! " % & ( ) [ ] { } ? # ' =``. A search for `movie 2020 1080p` then finds `Movie (2020) [1080p].mp4`. Hover the two options to see the characters.
 - Matches are highlighted in the list.
 
 ### The file list
@@ -69,7 +70,8 @@ Start **File Library** from the app grid, or run `file-library` in a terminal.
 
 | What | When it is saved |
 |------|------------------|
-| Folders, hidden folders, file types per folder, **Case sensitive**, **Ignore delimiter**, the **Show** filter | Only when you press **Save config** |
+| Folders, hidden folders, file types per folder | Only when you press **Save config** |
+| **Case sensitive**, **Ignore delimiter**, **Ignore special chars**, the **Show** filter | Immediately when you change them |
 | Window size, maximized state, position of the divider | Automatically when the window closes |
 | The scanned file index | Automatically after every scan |
 
@@ -106,7 +108,8 @@ You can change the lists in `src/file_library_core.py`.
 
 | File | Purpose |
 |------|---------|
-| `~/.config/file-library/config.json` | Folders, file types, search options and the type filter, written by **Save config** |
+| `~/.config/file-library/config.json` | Folders, hidden state and file types, written by **Save config** |
+| `~/.config/file-library/view.json`   | Search options and the **Show** filter, written immediately |
 | `~/.config/file-library/window.json` | Window size and divider position, written when the window closes |
 | `~/.cache/file-library/cache.json`   | The scanned file index |
 
@@ -123,7 +126,7 @@ python3 src/file_library.py
 
 ```bash
 ./build-deb.sh
-sudo apt install ./build/file-library_1.0.14_all.deb
+sudo apt install ./build/file-library_1.0.15_all.deb
 ```
 
 Building only needs `dpkg-deb`, which Ubuntu already includes. The version is defined in `packaging/control` and `src/file_library_core.py`, and the build stops if the two differ.

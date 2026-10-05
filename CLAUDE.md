@@ -17,8 +17,8 @@ assistant made by Anthropic.
 
 - There is no automated test suite in this repository yet.
 - The core logic in `src/file_library_core.py` was checked during development with throwaway Python scripts:
-  scanning for the four file types (including `.cbz` and `.cbr`), name search with the case-sensitive and
-  ignore-delimiter options, saving and loading the config and the window state (including configs from older
+  scanning for the four file types (including `.cbz` and `.cbr`), name search with the case-sensitive,
+  ignore-delimiter and ignore-special-chars options, saving and loading the config, the view settings and the window state (including configs from older
   versions and folders without a file type), the text export format and cancelling a scan.
 - The incremental update of the file list when a folder is hidden or shown was tested against a stand-in for
   the GTK list model, not against the real widget.
@@ -36,11 +36,12 @@ assistant made by Anthropic.
 
 - `src/file_library_core.py` has no GUI imports. Put logic there and keep `src/file_library.py` thin, so the
   logic can be tried without GTK.
-- **Save config** (F7) is the only thing that writes `~/.config/file-library/config.json`: the folders,
-  whether they are hidden, their file types, **Case sensitive**, **Ignore delimiter** and the **Show**
-  filter. Unsaved changes are shown by a dot in the title bar, an "Unsaved changes" label and a highlighted
-  button, and are dropped on restart. The window layout (`window.json`) and the scan cache (`cache.json`)
-  are saved automatically. Keep it that way.
+- **Save config** (F7) is the only thing that writes `~/.config/file-library/config.json`: the folders, whether
+  they are hidden and their file types. Unsaved changes are shown by a dot in the title bar, an "Unsaved
+  changes" label and a highlighted button, and are dropped on restart. The search options, the **Show**
+  filter (`view.json`), the window layout (`window.json`) and the scan cache (`cache.json`) are saved
+  automatically and never mark the config as changed. Keep it that way.
+- `load_view_settings` takes over the search keys of an old `config.json` once, if `view.json` is missing.
 - Keep `load_config` / `save_config` backward compatible. Configs written by older versions must still load,
   with defaults for missing keys. An empty file type list for a folder is valid: such a folder is not scanned.
 - The version is defined in two places: `packaging/control` and `__version__` in

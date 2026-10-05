@@ -274,13 +274,15 @@ def render():
         y += 116
 
     # search row (empty search, both options off)
-    c.rect(323, 130, 690, 162, fill="#ffffff", outline="#b5b5b5", r=6)
+    c.rect(323, 130, 540, 162, fill="#ffffff", outline="#b5b5b5", r=6)
     icon_search(c, 334, 138)
-    c.text(358, 146, "Search file names, for example garden", 12, "#9a9a9a")
-    checkbox(c, 706, 138, False)
-    c.text(728, 146, "Case sensitive", 12.5)
-    checkbox(c, 836, 138, False)
-    c.text(858, 146, "Ignore delimiter", 12.5)
+    c.text(358, 146, "Search file names", 12, "#9a9a9a")
+    checkbox(c, 556, 138, False)
+    c.text(578, 146, "Case sensitive", 12.5)
+    checkbox(c, 684, 138, False)
+    c.text(706, 146, "Ignore delimiter", 12.5)
+    checkbox(c, 822, 138, False)
+    c.text(844, 146, "Ignore special chars", 12.5)
 
     # list
     tree_bottom = status_y - 40

@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 
-__version__ = "1.0.14"
+__version__ = "1.0.15"
 APP_NAME = "File Library"
 COMMENTS = "Browse and search videos, images, documents and music from several folders."
 REPO_URL = "https://github.com/xenowood/file-library"
@@ -95,10 +95,10 @@ def _ordered_types(keys):
 
 
 def load_config(path=None):
-    """Return the saved config as a dict.
+    """Return the saved config: {"folders": [{path, enabled, types}]}.
 
-    {"folders": [{path, enabled, types}], "case_sensitive": bool,
-     "ignore_delimiter": bool, "view_types": [type keys shown in the list]}
+    Older versions also kept the search options and the Show filter in this
+    file. They are read by load_view_settings, which takes them over once.
     """
     data = _read_json(path or config_path(), {})
     folders = []
@@ -107,28 +107,60 @@ def load_config(path=None):
         types = [t for t in item.get("types", []) if t in TYPES]
         if p:
             folders.append({"path": p, "enabled": bool(item.get("enabled", True)), "types": types})
-    search = data.get("search", {})
-    view_types = _ordered_types(data.get("view_types", TYPE_ORDER)) or list(TYPE_ORDER)
-    return {
-        "folders": folders,
-        "case_sensitive": bool(search.get("case_sensitive", False)),
-        "ignore_delimiter": bool(search.get("ignore_delimiter", False)),
-        "view_types": view_types,
-    }
+    return {"folders": folders}
 
 
-def save_config(folders, settings=None, path=None):
-    """folders: list of {path, enabled, types}; settings: search options and view filter."""
-    settings = settings or {}
+def save_config(folders, path=None):
+    """folders: list of {path, enabled, types}. Written only by Save config."""
     data = {
         "version": 2,
         "folders": [{"path": f["path"], "enabled": f["enabled"], "types": _ordered_types(f["types"])}
                     for f in folders],
-        "search": {"case_sensitive": bool(settings.get("case_sensitive", False)),
-                   "ignore_delimiter": bool(settings.get("ignore_delimiter", False))},
-        "view_types": _ordered_types(settings.get("view_types", TYPE_ORDER)),
     }
     _write_json(path or config_path(), data)
+
+
+# ---------------------------------------------------------------- display settings
+def view_settings_path():
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    return os.path.join(base, "file-library", "view.json")
+
+
+def load_view_settings(path=None, legacy_config=None):
+    """Search options and Show filter, stored on the fly as the user changes them.
+
+    {"case_sensitive": bool, "ignore_delimiter": bool, "ignore_special": bool,
+     "view_types": [type keys shown in the list]}
+
+    If view.json does not exist yet, the values that versions up to 1.0.14 kept
+    in config.json are taken over.
+    """
+    data = _read_json(path or view_settings_path(), None)
+    if not isinstance(data, dict):
+        old = _read_json(legacy_config or config_path(), {})
+        search = old.get("search") if isinstance(old.get("search"), dict) else {}
+        data = {"case_sensitive": search.get("case_sensitive", False),
+                "ignore_delimiter": search.get("ignore_delimiter", False),
+                "view_types": old.get("view_types")}
+    keys = data.get("view_types")
+    view_types = _ordered_types(keys) if isinstance(keys, list) else []
+    return {
+        "case_sensitive": bool(data.get("case_sensitive", False)),
+        "ignore_delimiter": bool(data.get("ignore_delimiter", False)),
+        "ignore_special": bool(data.get("ignore_special", False)),
+        "view_types": view_types or list(TYPE_ORDER),
+    }
+
+
+def save_view_settings(settings, path=None):
+    data = {
+        "version": 1,
+        "case_sensitive": bool(settings.get("case_sensitive", False)),
+        "ignore_delimiter": bool(settings.get("ignore_delimiter", False)),
+        "ignore_special": bool(settings.get("ignore_special", False)),
+        "view_types": _ordered_types(settings.get("view_types", TYPE_ORDER)),
+    }
+    _write_json(path or view_settings_path(), data)
 
 
 # ---------------------------------------------------------------- window state
@@ -206,14 +238,24 @@ def scan_folder(root, types, progress=None, cancel=None):
 
 
 # ---------------------------------------------------------------- filtering
-DELIMITERS = " ._-,"
+# Characters that "Ignore delimiter" and "Ignore special chars" skip while searching.
+DELIMITERS = " ._-,\u2014"          # space . _ - , and the em dash
+SPECIAL_CHARS = "!\"%&()[]{}?#'="    # ! " % & ( ) [ ] { } ? # ' =
 
 
-def _fold(text, case_sensitive, ignore_delimiters):
-    """Return (folded text, index of each folded char in the original text)."""
+def show_chars(chars):
+    """The characters themselves, for tooltips. A space is shown as a visible symbol."""
+    return "  ".join("\u2423" if c == " " else c for c in chars)
+
+
+def _fold(text, case_sensitive, skip):
+    """Return (folded text, index of each folded char in the original text).
+
+    Characters listed in skip are dropped.
+    """
     chars, index = [], []
     for i, ch in enumerate(text):
-        if ignore_delimiters and ch in DELIMITERS:
+        if ch in skip:
             continue
         for c in (ch if case_sensitive else ch.lower()):
             chars.append(c)
@@ -221,43 +263,54 @@ def _fold(text, case_sensitive, ignore_delimiters):
     return "".join(chars), index
 
 
-def find_match(name, query, case_sensitive=False, ignore_delimiters=False):
+def _skip_chars(ignore_delimiters, ignore_special):
+    return (DELIMITERS if ignore_delimiters else "") + (SPECIAL_CHARS if ignore_special else "")
+
+
+def find_match(name, query, case_sensitive=False, ignore_delimiters=False, ignore_special=False):
     """Return (start, end) of the first match of query in name, or None.
 
-    With ignore_delimiters, spaces, dots, commas, dashes and underscores are
-    ignored on both sides, so "the time has come" also matches "the.time-has_come".
-    An empty query matches everything and returns (0, 0).
+    With ignore_delimiters, the characters in DELIMITERS (space, dot, underscore,
+    dash, comma, em dash) are ignored on both sides, so "the time has come" also
+    matches "the.time-has_come". With ignore_special, the characters in
+    SPECIAL_CHARS are ignored the same way. An empty query matches everything
+    and returns (0, 0).
     """
-    wanted, _ = _fold(query, case_sensitive, ignore_delimiters)
+    skip = _skip_chars(ignore_delimiters, ignore_special)
+    wanted, _ = _fold(query, case_sensitive, skip)
     if not wanted:
         return (0, 0)
-    haystack, index = _fold(name, case_sensitive, ignore_delimiters)
+    haystack, index = _fold(name, case_sensitive, skip)
     pos = haystack.find(wanted)
     if pos < 0:
         return None
     return index[pos], index[pos + len(wanted) - 1] + 1
 
 
-def find_in_filename(filename, query, case_sensitive=False, ignore_delimiters=False):
+def find_in_filename(filename, query, case_sensitive=False, ignore_delimiters=False,
+                     ignore_special=False):
     """Like find_match, but only looks at the file name without its extension.
 
     The returned span is valid for the full file name too, because the name
     without extension is a prefix of it.
     """
     stem = os.path.splitext(filename)[0]
-    return find_match(stem, query, case_sensitive, ignore_delimiters)
+    return find_match(stem, query, case_sensitive, ignore_delimiters, ignore_special)
 
 
-def _match(filename, query, case_sensitive, ignore_delimiters=False):
-    return find_in_filename(filename, query, case_sensitive, ignore_delimiters) is not None
+def _match(filename, query, case_sensitive, ignore_delimiters=False, ignore_special=False):
+    return find_in_filename(filename, query, case_sensitive, ignore_delimiters,
+                            ignore_special) is not None
 
 
-def filter_tree(node, types, query="", case_sensitive=False, ignore_delimiters=False):
+def filter_tree(node, types, query="", case_sensitive=False, ignore_delimiters=False,
+                ignore_special=False):
     """Return a filtered copy of node, or None if nothing matches."""
     files = [f for f in node["files"]
-             if f[1] in types and _match(f[0], query, case_sensitive, ignore_delimiters)]
-    dirs = [d for d in (filter_tree(c, types, query, case_sensitive, ignore_delimiters)
-                        for c in node["dirs"]) if d]
+             if f[1] in types and _match(f[0], query, case_sensitive, ignore_delimiters,
+                                         ignore_special)]
+    dirs = [d for d in (filter_tree(c, types, query, case_sensitive, ignore_delimiters,
+                                    ignore_special) for c in node["dirs"]) if d]
     if not files and not dirs:
         return None
     return {"name": node["name"], "files": files, "dirs": dirs}
