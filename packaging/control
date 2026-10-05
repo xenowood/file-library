@@ -1,0 +1,16 @@
+Package: file-library
+Version: 1.0.14
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-4.0
+Maintainer: File Library <noreply@example.com>
+Description: Browse and search videos, images, documents and music from several folders
+ File Library indexes one or more source folders and shows the videos, images,
+ documents and music inside them as a tree with file sizes in MB. The index is
+ cached, so searching (case sensitive or insensitive, optionally ignoring
+ delimiters) is instant and needs no rescan. The folder setup, search options
+ and type filter are stored with "Save config"; changes that are not saved are
+ dropped when the app is restarted. The shown list can be exported as a .txt
+ file, and a right-click on any file can copy its full path or open its folder
+ in the file manager. Keyboard shortcuts are listed in the About window.
