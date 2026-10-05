@@ -142,6 +142,7 @@ tools/render_icons.py      renders the app icon (SVG and PNG sizes)
 tools/render_screenshot.py renders docs/screenshot.png (an illustration, not a capture)
 docs/screenshot.png        image shown at the top of this README
 RELEASE_NOTES.md           notes for the latest GitHub release
+CLAUDE.md                  how the project was made and tested with Claude, and notes for working on it
 build-deb.sh               assembles the .deb
 ```
 
